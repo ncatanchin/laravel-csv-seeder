@@ -1,12 +1,12 @@
 {
-    "name": "flynsarmy/csv-seeder",
-    "description": "Allows seeding of the database with CSV files",
-    "keywords": ["laravel", "csv", "seed", "seeds", "seeding"],
+    "name": "crockett/csv-seeder",
+    "description": "Allows database seeding with CSV files",
+    "keywords": ["laravel", "csv", "seed", "seeds", "seeder", "seeding"],
     "license": "MIT",
     "authors": [
         {
-            "name": "Flyn San",
-            "email": "flynsarmy@gmail.com"
+            "name": "Andy Crockett",
+            "email": "andy@andycrockett.io"
         }
     ],
     "require": {
@@ -15,7 +15,7 @@
     },
     "autoload": {
         "psr-0": {
-            "Flynsarmy\\CsvSeeder\\": "src/"
+            "Crockett\\CsvSeeder\\": "src/"
         }
     },
     "minimum-stability": "dev"

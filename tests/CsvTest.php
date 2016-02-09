@@ -9,7 +9,7 @@ class CsvTest extends TestCase
     {
         // Create our testing DB tables
         $this->artisan('migrate', [
-            '--path' => 'vendor/flynsarmy/csv-seeder/tests/migrations',
+            '--path' => 'vendor/Crockett/csv-seeder/tests/migrations',
         ]);
 
         $this->beforeApplicationDestroyed(function () {
@@ -37,7 +37,7 @@ class CsvTest extends TestCase
 
     public function testBOMIsStripped()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
 
         $bomString = chr(239) . chr(187) . chr(191) . "foo";
         $nonBomString = "my non bom string";
@@ -55,7 +55,7 @@ class CsvTest extends TestCase
 
     public function testMappings()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
         $row = [1, 'ignored', 'first', 'last'];
 
         // Test no skipped columns
@@ -105,7 +105,7 @@ class CsvTest extends TestCase
 
     public function testCanOpenCSV()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
 
         // Test an openable CSV
         $expected = "resource";
@@ -120,7 +120,7 @@ class CsvTest extends TestCase
 
     public function testImport()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
         $seeder->table = 'users';
         $seeder->filename = __DIR__.'/csvs/users.csv';
         $seeder->hashable = '';
@@ -145,7 +145,7 @@ class CsvTest extends TestCase
 
     public function testIgnoredColumnImport()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
         $seeder->table = 'users';
         $seeder->filename = __DIR__.'/csvs/users_with_ignored_column.csv';
         $seeder->hashable = '';
@@ -170,7 +170,7 @@ class CsvTest extends TestCase
 
     public function testHash()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
         $seeder->table = 'users';
         $seeder->filename = __DIR__.'/csvs/users.csv';
 
@@ -201,7 +201,7 @@ class CsvTest extends TestCase
 
     public function testOffset()
     {
-        $seeder = new \Flynsarmy\CsvSeeder\CsvSeeder;
+        $seeder = new \Crockett\CsvSeeder\CsvSeeder;
         $seeder->table = 'users';
         $seeder->filename = __DIR__.'/csvs/users.csv';
         $seeder->hashable = '';

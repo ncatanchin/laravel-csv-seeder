@@ -8,42 +8,42 @@ This package allows CSV based seeds.
 
 ### Installation
 
-Require this package in your composer.json and run composer update (or run `composer require flynsarmy/csv-seeder:1.*` directly):
+Require this package in your composer.json and run composer update (or run `composer require crockett/csv-seeder:1.*` directly):
 
-    "flynsarmy/csv-seeder": "1.0.*"
+    "crockett/csv-seeder": "1.0.*"
 
 
 ### Usage
 
 Your CSV's header row should match the DB columns you wish to import. IE to import *id* and *name* columns, your CSV should look like:
 
-	id,name
-	1,Foo
-	2,Bar
+    id,name
+    1,Foo
+    2,Bar
 
-Seed classes must extend `Flynsarmy\CsvSeeder\CsvSeeder`, they must define the destination database table and CSV file path, and finally they must call `parent::run()` like so:
+Seed classes must extend `Crockett\CsvSeeder\CsvSeeder`, they must define the destination database table and CSV file path, and finally they must call `parent::run()` like so:
 
-	use Flynsarmy\CsvSeeder\CsvSeeder;
+    use Crockett\CsvSeeder\CsvSeeder;
 
-	class StopsTableSeeder extends CsvSeeder {
+    class StopsTableSeeder extends CsvSeeder {
 
-		public function __construct()
-		{
-			$this->table = 'your_table';
-			$this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
-		}
+        public function __construct()
+        {
+            $this->table = 'your_table';
+            $this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
+        }
 
-		public function run()
-		{
-			// Recommended when importing larger CSVs
-			DB::disableQueryLog();
+        public function run()
+        {
+            // Recommended when importing larger CSVs
+            DB::disableQueryLog();
 
-			// Uncomment the below to wipe the table clean before populating
-			DB::table($this->table)->truncate();
+            // Uncomment the below to wipe the table clean before populating
+            DB::table($this->table)->truncate();
 
-			parent::run();
-		}
-	}
+            parent::run();
+        }
+    }
 
 Drop your CSV into */database/seeds/csvs/your_csv.csv* or whatever path you specify in your constructor above.
 
@@ -61,41 +61,41 @@ In addition to setting the database table and CSV filename, two other configurat
 ### Examples 
 CSV with pipe delimited values:
 
-	public function __construct()
-	{
-		$this->table = 'users';
-		$this->csv_delimiter = '|';
-		$this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
-	}
-	
+    public function __construct()
+    {
+        $this->table = 'users';
+        $this->csv_delimiter = '|';
+        $this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
+    }
+
 Specifying which CSV columns to import:
 
-	public function __construct()
-	{
-		$this->table = 'users';
-		$this->csv_delimiter = '|';
-		$this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
-		$this->mapping = [
-		    0 => 'first_name',
-		    1 => 'last_name',
-		    5 => 'age',
-		];
-	}
-	
+    public function __construct()
+    {
+        $this->table = 'users';
+        $this->csv_delimiter = '|';
+        $this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
+        $this->mapping = [
+            0 => 'first_name',
+            1 => 'last_name',
+            5 => 'age',
+        ];
+    }
+
 Skipping the CSV header row (Note: A mapping is required if this is done):
 
-	public function __construct()
-	{
-		$this->table = 'users';
-		$this->csv_delimiter = '|';
-		$this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
-		$this->offset_rows = 1;
-		$this->mapping = [
-		    0 => 'first_name',
-		    1 => 'last_name',
-		    2 => 'password',
-		];
-	}
+    public function __construct()
+    {
+        $this->table = 'users';
+        $this->csv_delimiter = '|';
+        $this->filename = base_path().'/database/seeds/csvs/your_csv.csv';
+        $this->offset_rows = 1;
+        $this->mapping = [
+            0 => 'first_name',
+            1 => 'last_name',
+            2 => 'password',
+        ];
+    }
 
 ### License
 
