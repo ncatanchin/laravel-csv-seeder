@@ -1,20 +1,13 @@
-<?php namespace Crockett\CsvSeeder;
+<?php
 
-use Crockett\CsvSeeder\Exception\CsvSeederException;
+namespace Crockett\CsvSeeder;
+
 use DB;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Schema;
 
 class CsvSeeder extends Seeder
 {
-
-    /**
-     * Class name of an Eloquent model
-     *
-     * @var string \Illuminate\Database\Eloquent\Model
-     */
-    public $model;
 
     /**
      * DB table name
@@ -24,6 +17,13 @@ class CsvSeeder extends Seeder
     public $table;
 
     /**
+     * Model class name
+     *
+     * @var string
+     */
+    public $model;
+
+    /**
      * CSV filename
      *
      * @var string
@@ -31,33 +31,7 @@ class CsvSeeder extends Seeder
     public $filename;
 
     /**
-     * Specifies DB fields that should be hashed prior to insertion.
-     * Override this as needed.
-     *
-     * @var array|string|false
-     */
-
-    public $hashable = 'password';
-
-    /**
-     * A SQL INSERT query will execute every time this number of rows are
-     * read from the CSV. Without this, large INSERTs will fail silently
-     *
-     * @var int
-     */
-    public $insert_chunk_size = 50;
-
-    /**
-     * A closure that takes an array of records and inserts them into the DB.
-     *
-     * Use it to override ride the default insertion behavior.
-     *
-     * @var object|closure
-     */
-    public $insert_callback = null;
-
-    /**
-     * CSV delimiter (defaults to ,)
+     * CSV delimiter
      *
      * @var string
      */
@@ -65,22 +39,35 @@ class CsvSeeder extends Seeder
 
     /**
      * Number of rows to skip at the start of the CSV.
-     * When resolving column names, the very first row is assumed to be the header row
      *
      * @var int
      */
     public $offset_rows = 0;
 
     /**
-     * The mapping of CSV to DB columns. If not specified manually,
-     * the very first row of your CSV will be read as your DB columns,
-     * if they weren't already resolved from an Eloquent model.
+     * Automatically skips the first row of the CSV -
+     * Only when the first row's column values are equal to the column names resolved (or defined) in $mapping.
      *
-     * To read the first, third and fourth columns of your CSV only, use:
+     * Setting $offset_rows to anything higher than 0 bypasses this.
+     *
+     * If you know your CSV doesn't have headers it's somewhat safer
+     * to disable this, but generally it shouldn't affect anything.
+     *
+     * @var bool
+     */
+    public $skip_header_row = true;
+
+    /**
+     * CSV header name mapping -
+     * An array that uses the CSV column index as the array key and a column name as the array value.
+     * Column names do not have to match the CSV headers.
+     *
+     * Using the indexes, you can specify which columns to read from the CSV and which to ignore.
+     * For example, to only read the first, third, and fourth columns from your CSV:
      * [
-     *     0 => 'column1_name',
-     *     2 => 'column3_name',
-     *     3 => 'column4_name',
+     *     0 => 'first_column_name',
+     *     2 => 'third_column_name',
+     *     3 => 'fourth_column_name',
      * ];
      *
      * @var array
@@ -88,14 +75,15 @@ class CsvSeeder extends Seeder
     public $mapping = [];
 
     /**
-     * Alias your CSV column names to different DB column names
+     * Aliases CSV headers to differently named DB columns.
      *
-     * After $this->mapping has been applied to the CSV row, you can use this
-     * to specify which columns should be aliased and what their alias names should be.
+     * Useful when $mapping is being resolved automatically and you're
+     * reading a CSV with headers named differently from your DB columns.
      *
-     * To alias a CSV column name of "email_address" to a DB column name "email", use:
+     * For example, to alias a CSV column named "email_address" to a DB column named "email":
      * [
      *    'email_address' => 'email'
+     *    // 'csv_header' => 'alias_name'
      * ];
      *
      * @var array
@@ -103,83 +91,219 @@ class CsvSeeder extends Seeder
     public $aliases = [];
 
     /**
-     * Enables or disables query logging. False is recommended for large CSVs.
+     * Specifies DB columns that should have their values hashed prior to insertion.
+     * Override this as needed.
+     *
+     * If you set any $aliases, be sure to use the aliased DB column name.
+     *
+     * @var array|string
+     */
+
+    public $hashable = 'password';
+
+    /**
+     * A SQL INSERT query will execute every time this number of rows are read from the CSV.
+     * Without this, large INSERTS will fail silently.
+     *
+     * @var int
+     */
+    public $insert_chunk_size = 50;
+
+    /**
+     * A closure that takes an array of CSV rows ($chunk) and inserts them into the DB.
+     * Use to override the default insertion behavior.
+     *
+     * Example:
+     *     function ($chunk) {
+     *         // insert $rows individually with model::create()
+     *         foreach($chunk as $row) {
+     *             YourModel::create($row);
+     *         }
+     *     }
+     *
+     * @var closure|callable|null
+     */
+    public $insert_callback = null;
+
+    /**
+     * Truncate the table prior to insertion
      *
      * @var bool
      */
-    public $log_queries = false;
+    public $truncate_before_insert = false;
 
     /**
-     * The level of log messages that will be written to the logs
+     * Disables foreign key checks when truncating a table.
      *
-     * @var false|string ('off', 'critical', 'error', 'warning', 'notice', 'log', 'debug', 'info')
+     * @var bool
      */
-    public $log_level = 'off';
+    public $ignore_foreign_keys = false;
+
+    /**
+     * Enables or disables query logging. Recommended for large CSVs.
+     *
+     * @var bool
+     */
+    public $disable_query_log = true;
+
+    /**
+     * Limit mapping columns to what is specified by the $fillable/$guarded model attributes
+     *
+     * @var bool
+     */
+    public $guard_model = true;
+
+    /**
+     * Show messages in the console
+     *
+     * @var bool
+     */
+    public $console_logs = true;
+
+    /**
+     * Write messages to laravel.log
+     *
+     * @var bool
+     */
+    public $write_logs = true;
 
     /**
      * The prefix for log messages
      *
      * @var string
      */
-    public $log_prefix = 'CsvSeeder: ';
+    public $log_prefix = '';
 
     /**
-     * Model attributes which are only read when a model is passed to the seeder
+     * Holder for columns read from the DB table
      *
      * @var array
      */
-    private $attributes;
+    private $table_columns;
 
+    public function __construct(
+        $filename = null,
+        $table = null,
+        $model = null,
+        $delimiter = ',',
+        $mapping = null,
+        $aliases = null,
+        $insert_callback = null
+    ) {
+        if (!is_null($filename)) {
+            $this->table = $table;
+            $this->model = $model;
+            $this->runOnce($filename, $delimiter, $mapping, $aliases, $insert_callback);
+        }
+    }
 
     /**
      * Run DB seed
      */
     public function run()
     {
-        //DB::table($this->table)->truncate();
+        $this->runSeeder();
+    }
 
-        // Squawk about missing filename
+    public function runSeeder()
+    {
+        // parse the model
+        if (!empty( $this->model )) {
+            $this->parseModel($this->model);
+        }
+
+        // abort for missing filename
         if (empty( $this->filename )) {
-            throw new CsvSeederException(
-                'No CSV filename specified.'
-            );
+            $this->console('CSV filename was not specified.', 'error');
+
+            return;
         }
 
-        // Squawk about missing table and model
-        if (empty( $this->table ) && empty( $this->model )) {
-            throw new CsvSeederException(
-                'No table or model name specified.'
-            );
+        // abort for missing table
+        if (empty( $this->table )) {
+            $this->console('DB table could not be resolved. Try setting it manually.', 'error');
+
+            return;
         }
 
-        // check if the passed model exists and check if it
-        // can be parsed for a column mapping and table name
-        $this->readModel($this->model);
+        // disable query log
+        if ($this->disable_query_log) $this->disableQueryLog();
+
+        // truncate the table before insertion
+        if ($this->truncate_before_insert) $this->truncateTable();
+
+        // update the log_prefix
+        $this->log_prefix = $this->log_prefix . $this->table . ': ';
 
         // convert hashable to array if a string was passed
         $this->hashable = is_string($this->hashable) ? [$this->hashable] : $this->hashable;
 
-        // disable query log
-        if ($this->log_queries == false) {
-            $this->disableQueryLog();
-        }
+        // load the acceptable table columns
+        $this->resolveTableColumns();
 
-        // read the CSV and seed the database
-        $this->seedFromCSV($this->filename, $this->csv_delimiter);
+        // finally, read and parse the CSV, seeding the database
+        $this->parseCSV();
     }
 
-    public function resetCSVSeeder()
+    /**
+     * Reset the seeder for another use
+     */
+    public function resetSeeder()
     {
-        $this->model             = null;
-        $this->table             = null;
-        $this->filename          = null;
-        $this->insert_callback   = null;
+        $this->model         = null;
+        $this->table         = null;
+        $this->filename      = null;
+        $this->mapping       = [];
+        $this->aliases       = [];
+        $this->hashable      = [];
+        $this->csv_delimiter = ',';
+        $this->offset_rows   = 0;
+        $this->log_prefix    = '';
+
         $this->insert_chunk_size = 50;
-        $this->mapping           = [];
-        $this->aliases           = [];
-        $this->hashable          = [];
-        $this->csv_delimiter     = ',';
-        $this->offset_rows       = 0;
+        $this->insert_callback   = null;
+    }
+
+    public function seedModelWithCSV(
+        $model,
+        $filename,
+        $delimiter = ',',
+        $mapping = null,
+        $aliases = null,
+        $insert_callback = null
+    ) {
+        $this->model = $model;
+        $this->runOnce($filename, $delimiter, $mapping, $aliases, $insert_callback);
+    }
+
+    public function seedTableWithCSV(
+        $table,
+        $filename,
+        $delimiter = ',',
+        $mapping = null,
+        $aliases = null,
+        $insert_callback = null
+    ) {
+        $this->table = $table;
+        $this->runOnce($filename, $delimiter, $mapping, $aliases, $insert_callback);
+    }
+
+    public function runOnce(
+        $filename,
+        $delimiter = ',',
+        $mapping = null,
+        $aliases = null,
+        $insert_callback = null
+    ) {
+        $this->filename      = $filename;
+        $this->csv_delimiter = $delimiter;
+        $this->mapping       = $mapping;
+        $this->aliases       = $aliases;
+
+        $this->insert_callback = $insert_callback;
+
+        $this->runSeeder();
+        $this->resetSeeder();
     }
 
     /**
@@ -192,9 +316,7 @@ class CsvSeeder extends Seeder
     public function openCSV($filename)
     {
         if (!file_exists($filename) || !is_readable($filename)) {
-            throw new CsvSeederException(
-                "CSV file could not be opened. " . $filename . " does not exist or is not readable."
-            );
+            return false;
         }
 
         // check if file is gzipped
@@ -209,77 +331,61 @@ class CsvSeeder extends Seeder
     }
 
     /**
-     * Collect data from a given CSV file and return as array
-     *
-     * @param string $filename
-     * @param string $deliminator
-     *
-     * @return array|bool
+     * Parse rows from the CSV and pass chunks of rows to the insert function
      */
-    public function seedFromCSV($filename, $deliminator = ",")
+    public function parseCSV()
     {
-        $handle = $this->openCSV($filename);
+        $handle = $this->openCSV($this->filename);
 
-        // CSV doesn't exist or couldn't be read from.
+        // abort for bad CSV
         if ($handle === false) {
-            throw new CsvSeederException(
-                "CSV file could not be opened. " . $filename . " does not exist or is not readable."
-            );
+            $this->console(
+                "CSV file could not be opened.\n {$this->filename} does not exist or is not readable.", 'error');
+
+            return;
         }
 
-        $chunk     = [];
-        $mapping   = $this->mapping ?: [];
-        $offset    = $this->offset_rows;
         $row_count = 0;
-        $skipped   = 0;
+        $skipped   = 0; // rows that were skipped
+        $failed    = 0; // chunk inserts that failed
+        $chunk     = []; // accumulator for rows until the chunk_limit is reached
+        $mapping   = empty( $this->mapping ) ? [] : $this->cleanMapping($this->mapping);
+        $offset    = $this->offset_rows;
 
-        // Mapping was specified, do one final check to ensure the columns actually exist
-        if (!empty( $mapping )) {
-            $mapping = $this->checkMappingColumns($mapping);
-        }
+        while (( $row = fgetcsv($handle, 0, $this->csv_delimiter) ) !== false) {
 
-        while (( $row = fgetcsv($handle, 0, $deliminator) ) !== false) {
-
-            // If no mapping was specified
-            // grab the first CSV row and use it as the mapping
-            // unless attributes are defined, then use those
-            // and then skip to the next row
-            if (empty( $mapping )) {
-                if (!empty( $this->model ) && !empty( $this->attributes )) {
-                    $columns = $this->attributes;
-                } else {
-                    $columns    = $row;
-                    $columns[0] = $this->stripUtf8Bom($columns[0]);
+            if ($row_count == 0 && $offset == 0) {
+                // Resolve mapping from the first row
+                if (empty( $mapping )) {
+                    $mapping = $this->cleanMapping($row);
                 }
 
-                $mapping = $this->checkMappingColumns($columns);
-
-                if ($offset == 0) $offset ++;
-            }
-
-            // check if the first row is a header row by comparing
-            // the mapping names to the row values, then skip it
-            if ($row_count == 0) {
-                $is_header_row = false;
-                foreach ($mapping as $index => $column) {
-                    if (array_key_exists($index, $row)) {
-                        if ($row[$index] == $column) {
-                            $is_header_row = true;
-                        }
+                // Automagically skip the header row
+                if (!empty( $mapping ) && $this->skip_header_row) {
+                    if ($this->isHeaderRow($row, $mapping)) {
+                        $offset ++;
                     }
                 }
-                if ($is_header_row && $offset == 0) {
-                    $offset ++;
-                }
             }
 
-            // Skip rows by the specified offset
+            // Skip the offset rows
             while ($offset > 0) {
                 $offset --;
                 continue 2;
             }
 
-            $row = $this->readRow($row, $mapping);
+            // Resolve mapping using the first row after offset
+            if (empty( $mapping )) {
+                $mapping = $this->cleanMapping($row);
+                // abort if mapping empty
+                if (empty( $mapping )) {
+                    $this->console("The mapping columns do not exist on the DB table.", 'error');
+
+                    return;
+                }
+            }
+
+            $row = $this->parseRow($row, $mapping);
 
             // Insert only non-empty rows from the csv file
             if (empty( $row )) {
@@ -291,69 +397,29 @@ class CsvSeeder extends Seeder
 
             // Chunk size reached, insert and clear the chunk
             if (count($chunk) >= $this->insert_chunk_size) {
-                $this->insert($chunk);
+                if (!$this->insert($chunk)) $failed ++;
                 $chunk = [];
             }
 
             $row_count ++;
         }
 
+        // convert failed chunks to failed rows
+        $failed = $failed * $this->insert_chunk_size;
+
         // Insert any leftover rows from the last chunk
         if (count($chunk) > 0) {
-            $this->insert($chunk);
+            if (!$this->insert($chunk)) $failed += count($chunk);
         }
 
         fclose($handle);
 
-        // log any skipped rows
-        if ($skipped > 0) {
-            $this->log($skipped . ' row(s) were skipped because they were empty.', 'debug');
-        }
-    }
+        // log results to console
+        $log = 'Imported ' . ( $row_count - $skipped - $failed ) . ' of ' . $row_count . ' rows. ';
+        if ($skipped > 0) $log .= $skipped . " empty rows. ";
+        if ($failed > 0) $log .= "<error>" . $failed . " failed rows.</error>";
 
-    /**
-     * Read a CSV row into a DB insertable array
-     *
-     * @param array $row     List of CSV columns
-     * @param array $mapping Array of csvCol => dbCol
-     *
-     * @return array
-     */
-    public function readRow(array $row, array $mapping)
-    {
-        $columns = [];
-
-        // apply column mapping
-        foreach ($mapping as $csvColumn => $dbColumn) {
-            if (!array_key_exists($csvColumn, $row) || empty( $row[$csvColumn] )) {
-                $columns[$dbColumn] = null;
-            } else {
-                $columns[$dbColumn] = $row[$csvColumn];
-            }
-        }
-
-        // apply mapping aliases
-        if (!empty( $this->aliases ) && is_array($this->aliases)) {
-            foreach ($this->aliases as $column => $alias) {
-                if (array_key_exists($column, $columns)) {
-                    // store the column value, remove the old column name, add the new alias name
-                    $value = $columns[$column];
-                    array_pull($columns, $column);
-                    $columns[$alias] = $value;
-                }
-            }
-        }
-
-        // hash any hashable columns
-        if (is_array($this->hashable)) {
-            foreach ($this->hashable as $hashable) {
-                if (array_key_exists($hashable, $columns)) {
-                    $columns[$hashable] = $this->hash($columns[$hashable]);
-                }
-            }
-        }
-
-        return $columns;
+        $this->console($log);
     }
 
     /**
@@ -365,15 +431,12 @@ class CsvSeeder extends Seeder
      */
     public function insert(array $chunk)
     {
-        // check for a custom insert callback
-        $callback = is_object($this->insert_callback)
-            ? $this->insert_callback
-            : $this->insertChunk($chunk);
+        $callback = $this->getInsertCallback();
 
         try {
             call_user_func($callback, $chunk);
         } catch (\Exception $e) {
-            $this->log("Insert failed: " . $e->getMessage(), 'error');
+            $this->log("Chunk insert failed:\n" . $e->getMessage(), 'critical');
 
             return false;
         }
@@ -382,162 +445,290 @@ class CsvSeeder extends Seeder
     }
 
     /**
-     * Strip UTF-8 BOM characters from the start of a string
+     * Resolve the function that inserts chunks into the database or returns the default behavior.
      *
-     * @param  string $text
-     *
-     * @return string       String with BOM stripped
+     * @returns closure|callable
      */
-    public function stripUtf8Bom($text)
+    public function getInsertCallback()
     {
-        $bom  = pack('H*', 'EFBBBF');
-        $text = preg_replace("/^$bom/", '', $text);
-
-        return $text;
-    }
-
-    // hash a value using laravel's hash helper
-    public function hash($value)
-    {
-        return bcrypt($value);
-    }
-
-    // the default chunk insertion behavior
-    protected function insertChunk(array $chunk)
-    {
-        // use the table or model if its available to insert the chunk
-        if (empty( $this->model )) {
-            DB::table($this->table)->insert($chunk);
-        } else {
-            $model = $this->resolveModel($this->model);
-            $model->insert($chunk);
-        }
-    }
-
-    // parse the details of a model passed to the seeder
-    protected function readModel($model_name)
-    {
-        if (empty( $model_name )) {
-            return false;
-        }
-
-        // Model name was specified - check if it can be resolved
-        // and check if we can resolve any variables that are needed later
-        $model = false;
-
-        // resolve an instance of the model
-        try {
-            $model = $this->resolveModel($model_name);
-        } catch (\Exception $e) {
-            $this->log('Exception occurred while resolving ' . $model_name, 'critical');
-        }
-
-        if (!$model instanceof Model) {
-            throw new CsvSeederException(
-                '"' . $model_name . '" could not be resolved.'
-            );
-        }
-
-        // update the log prefix to reflect the active model
-        $this->log_prefix = $this->log_prefix . get_class($this) . ': ' . get_class($model) . ': ';
-
-        // resolve the table name from the model
-        $this->table = $this->resolveModelTableName($model);
-        $this->log('Table name resolved from the model.', 'error');
-
-        // if not specified, try to resolve the column mapping from the model
-        if (empty( $this->mapping )) {
-            $mapping = $this->resolveModelColumnMap($model);
-            if ($mapping !== false) {
-                $this->attributes = $mapping;
-                $this->log('Column mapping resolved from the model.', 'notice');
-            }
-        }
-    }
-
-    // resolve a model out of laravel's IOC container
-    protected function resolveModel($model, $parameters = [])
-    {
-        return app($model, $parameters);
-    }
-
-    // get the table name from an Eloquent model
-    protected function resolveModelTableName(Model $model)
-    {
-        return $model->getTable();
-    }
-
-    protected function resolveModelColumnMap(Model $model)
-    {
-        if (!property_exists($model, 'fillable')) {
-            return false;
-        }
-
-        return $model->getFillable();
-    }
-
-    // log a message using laravel's log helper
-    protected function log($message, $level = 'info')
-    {
-        if ($this->log_level === false) {
-            return false;
-        }
-
-        $levels    = ['off', 'critical', 'error', 'warning', 'notice', 'log', 'debug', 'info'];
-        $max_level = array_search($this->log_level, $levels);
-        $log_level = array_search($level, $levels);
-
-        if ($log_level == 0 || $log_level > $max_level) {
-            return false;
-        }
-
-        return logger()->log($level, $this->log_prefix . $message);
+        return is_object($this->insert_callback)
+            ? $this->insert_callback
+            : function (array $chunk) {
+                if (empty( $this->model )) {
+                    // use DB table insert method
+                    DB::table($this->table)->insert($chunk);
+                } else {
+                    // use model insert method
+                    $model = $this->resolveModel($this->model);
+                    $model->insert($chunk);
+                }
+            };
     }
 
     /**
-     * Removes columns from a mapping that don't exist in the database
+     * Strips UTF-8 BOM characters from a string
      *
-     * @param $mapping array
+     * @param $string
+     *
+     * @return string
+     */
+    public function stripUtf8Bom($string)
+    {
+        $bom    = pack('H*', 'EFBBBF');
+        $string = preg_replace("/^$bom/", '', $string);
+
+        return $string;
+    }
+
+    /**
+     * Check if the column values in $row are the same as the column names in $mapping.
+     */
+    protected function isHeaderRow(array $row, array $mapping)
+    {
+        $is_header_row = true;
+
+        foreach ($mapping as $index => $column) {
+            if (array_key_exists($index, $row)) {
+                if ($row[$index] != $column) {
+                    $is_header_row = false;
+                }
+            }
+        }
+
+        return $is_header_row;
+    }
+
+    /**
+     * Parse a CSV row into a DB insertable array
+     *
+     * @param array $row     List of CSV columns
+     * @param array $mapping Array of csvCol => dbCol
      *
      * @return array
      */
-    private function checkMappingColumns(array $mapping)
+    protected function parseRow(array $row, array $mapping)
     {
-        foreach ($mapping as $index => $column) {
-            if (!$this->checkColumnExists($this->table, $column)) {
-                array_pull($mapping, $index);
+        $columns = [];
+
+        // apply mapping to row columns - ['column_name' => 'column_value']
+        foreach ($mapping as $csv_index => $column_name) {
+            $columns[$column_name] = array_key_exists($csv_index, $row) && !empty( $row[$csv_index] )
+                ? $columns[$column_name] = $row[$csv_index]
+                : null;
+        }
+
+        $columns = $this->aliasColumns($columns);
+
+        $columns = $this->hashColumns($columns);
+
+        return $columns;
+    }
+
+    /**
+     * Remove columns in the mapping that don't exist in the DB table
+     *
+     * @param array $mapping
+     *
+     * @return array
+     */
+    protected function cleanMapping(array $mapping)
+    {
+        $columns    = $mapping;
+        $columns[0] = $this->stripUtf8Bom($columns[0]);
+
+        // Cull columns that don't exist in the database
+        foreach ($columns as $index => $column) {
+            // apply column alias
+            $column = $this->aliasColumn($column);
+            if (array_search($column, $this->table_columns) === false) {
+                array_pull($columns, $index);
             }
         }
 
-        // Squawk if all mappings were removed by the existence check
-        if (empty( $mapping )) {
-            throw new CsvSeederException(
-                "All the specified column mappings do not exist in the database."
-            );
-        }
-
-        return $mapping;
+        return $columns;
     }
 
-    private function checkColumnExists($table, $column)
+    /**
+     * Apply aliases to a group of columns
+     */
+    protected function aliasColumns(array $columns)
     {
-        // apply mapping aliases if defined
-        if (!empty( $this->aliases )) {
-            if (array_key_exists($column, $this->aliases)) {
-                $column = $this->aliases[$column];
+        if (is_array($this->aliases) && !empty( $this->aliases )) {
+            foreach ($this->aliases as $csv_column => $alias_column) {
+                if (array_key_exists($csv_column, $columns)) {
+                    // store the value, remove the old column, add the new aliased column
+                    $value = $columns[$csv_column];
+                    array_pull($columns, $csv_column);
+                    $columns[$alias_column] = $value;
+                }
             }
         }
 
-        return DB::getSchemaBuilder()->hasColumn($table, $column);
+        return $columns;
     }
 
-    private function disableQueryLog()
+    /**
+     * Apply alias to a single column
+     */
+    protected function aliasColumn($column)
+    {
+        return is_array($this->aliases) && array_key_exists($column, $this->aliases)
+            ? $this->aliases[$column]
+            : $column;
+    }
+
+    /**
+     * Hash any hashable columns
+     */
+    protected function hashColumns(array $columns)
+    {
+        if (is_array($this->hashable) && !empty( $this->hashable )) {
+            foreach ($this->hashable as $hashable) {
+                if (array_key_exists($hashable, $columns)) {
+                    $columns[$hashable] = bcrypt($columns[$hashable]);
+                }
+            }
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Resolves allowed columns for the table. Applies model guard if available.
+     */
+    protected function resolveTableColumns()
+    {
+        // get every column that exists on the table
+        $columns = $this->getTableColumns();
+
+        if (empty( $columns )) {
+            $this->log('Unable to resolve table columns', 'critical');
+            $this->console('Unable to resolve table columns', 'error');
+
+            return;
+        }
+
+        // Run the model guard on the columns
+        if (!empty( $this->model ) && $this->guard_model) {
+            $columns = $this->guardModelColumns($this->resolveModel($this->model), $columns);
+        }
+
+        $this->log('Table columns resolved.');
+
+        $this->table_columns = $columns;
+    }
+
+    /**
+     * Apply model attributes like $fillable and $guarded to an array of columns
+     *
+     * @param Model $model
+     * @param array $columns
+     *
+     * @return array
+     */
+    protected function guardModelColumns($model, $columns)
+    {
+        // filter out columns not allowed by the $fillable attribute
+        if (method_exists($model, 'getFillable')) {
+            if (!empty( $fillable = $model->getFillable() )) {
+                foreach ($columns as $index => $column) {
+                    if (array_search($column, $fillable) === false) {
+                        array_pull($columns, $index);
+                    }
+                }
+            };
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Verify the model exists and resolve its' table name, if not already defined
+     *
+     * @param $class - model class that implements the ORM (Eloquent)
+     */
+    protected function parseModel($class)
+    {
+        try {
+            $model = $this->resolveModel($class);
+        } catch (\Exception $e) {
+            $this->log("$class could not be resolved.", 'warning');
+            $this->console("$class could not be resolved.", 'error');
+
+            return;
+        }
+
+        // resolve the table name from the model
+        if (empty( $this->table )) {
+            $table = method_exists($model, 'getTable') ? $model->getTable() : false;
+            if ($table !== false) {
+                $this->table = $table;
+            } else {
+                $this->log("Table could not be resolved from $class.", 'warning');
+                $this->console("Table could not be resolved from $class.", 'error');
+            }
+        }
+    }
+
+    /**
+     * Returns a new model instance
+     */
+    protected function resolveModel($class, $parameters = [])
+    {
+        return app($class, $parameters);
+    }
+
+    /**
+     * Get all columns for the DB table
+     */
+    protected function getTableColumns()
+    {
+        return DB::getSchemaBuilder()->getColumnListing($this->table);
+    }
+
+    /**
+     * Truncate a table (optionally ignore foreign keys)
+     */
+    protected function truncateTable()
+    {
+        if ($this->ignore_foreign_keys) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
+
+        DB::table($this->table)->truncate();
+
+        if ($this->ignore_foreign_keys) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
+    }
+
+    /**
+     * Disable the query log
+     */
+    protected function disableQueryLog()
     {
         DB::disableQueryLog();
     }
 
-    private function enableQueryLog()
+    /**
+     * Show a message in the console
+     */
+    protected function console($message, $style = null)
     {
-        DB::enableQueryLog();
+        if ($this->console_logs === false) return;
+
+        $message = $style ? "<$style>$message</$style>" : $message;
+
+        $this->command->line('<info>CSVSeeder: </info>' . $this->log_prefix . $message);
+    }
+
+    /**
+     * Write a message to the logs using Laravel's Log helper
+     */
+    protected function log($message, $level = 'info')
+    {
+        if ($this->write_logs === false) return;
+
+        logger()->log($level, 'CSVSeeder: ' . $this->log_prefix . $message);
     }
 }

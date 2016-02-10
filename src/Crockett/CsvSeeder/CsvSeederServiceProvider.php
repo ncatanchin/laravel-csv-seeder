@@ -1,4 +1,6 @@
-<?php namespace Crockett\CsvSeeder;
+<?php
+
+namespace Crockett\CsvSeeder;
 
 use Illuminate\Support\ServiceProvider;
 
