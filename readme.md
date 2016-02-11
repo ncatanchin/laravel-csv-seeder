@@ -7,7 +7,7 @@ This package is intended to minimize the time and hassle spent importing CSV-bas
 - [Key Features](#key-features)
 - [Installation](#installation)
 - [Setup](#setup)
-- [Common Usage](#common-usage)
+- [Usage Examples](#usage-examples)
     - [Mismatched Columns](#mismatched-columns)
     - [Insert Callbacks](#insert-callbacks)
 - [Configuration](#configuration)
@@ -29,9 +29,7 @@ Require this package in your composer.json and run `composer update`
 
     "crockett/csv-seeder": "1.1.*"
 
-Or just require it directly:
-
-`composer require crockett/csv-seeder`
+Or just require it directly `composer require crockett/csv-seeder`
 
 ## Setup
 
@@ -49,6 +47,7 @@ Here is a typical, single CSV seeder setup:
 
         public function run()
         {
+            // runs the seeder - alternatively, you could call $this->runSeeder(); for the same result
             parent::run();
         }
     }
@@ -73,7 +72,7 @@ If you want to seed multiple CSVs in the same seeder, you could do something lik
         }
     }
 
-That can get messy, fast. Instead, you could use the helper method `seedFromCSV()`, which is just a cleaner, condensed way to define your parameters and call `parent::run()`. Example:
+As you can imagine, that can get messy very fast. Instead, you could use the helper method `seedFromCSV()` which is just a cleaner way to define your parameters and run the seeder in one go:
 
     use Crockett\CsvSeeder\CsvSeeder;
 
@@ -90,9 +89,9 @@ That can get messy, fast. Instead, you could use the helper method `seedFromCSV(
     }
 
 
-## Common Usage
+## Usage Examples
 
-Given the following CSV file and database table:
+Given the following CSV and database table:
 
     // users.csv
     first_name,last_name,birth_date,password,favorite_color
@@ -103,11 +102,11 @@ Given the following CSV file and database table:
     // users DB table
     id, first_name, last_name, birth_date, password, favorite_color
 
-You can just run the seeder with no further setup:
+You can run the seeder with no further setup:
 
     $this->seedFromCSV(base_path('path/to/users.csv'), 'users');
 
-When all the column names match, this is all that's required to run the seeder. You could even go a step further and omit the table name, because the CSV filename is the same as the table.
+You could even go a step further and omit the table name, as the CSV filename is the same as the table name. `CsvSeeder` will automatically try to resolve table and column names when they're not defined. If your CSV doesn't have a header row, you'll need to manually define a `$mapping`, as described in the next section.
 
 ### Mismatched columns
 
@@ -149,7 +148,7 @@ When you define a `$mapping`, a header row on your CSV is *not* required. In all
 
 ### Insert Callbacks
 
-In some cases you'll need to manipulate the CSV data before it's inserted into the database. Using an `$insert_callback`, it couldn't be easier! When a `$chunk` of rows is read from the CSV, they're passed to the `$insert_callback`. All you need to do is define your own callback.
+In some cases, you'll need to manipulate the CSV data directly before it's inserted to the database. Using an `$insert_callback`, it couldn't be easier! Everytime a `$chunk` of rows is read from the CSV, it's passed to the default `$insert_callback`. All you need to do is define your own callback to override it.
 
 Here we'll iterate over individual rows in the chunk and insert them using `Model::create()`:
 
@@ -201,7 +200,7 @@ CSV with pipe delimited values:
     {
         $this->table = 'users';
         $this->filename = base_path('database/seeds/csvs/your_csv.csv');
-        $this->csv_delimiter = '|';
+        $this->delimiter = '|';
     }
 
 Specifying which CSV columns to import:
@@ -223,6 +222,8 @@ Using a model instead of a table:
     {
         $this->model = \App\User::model;
         $this->filename = base_path('database/seeds/csvs/your_csv.csv');
+        // optionally, disable the $model_guard to ignore your model's guarded/fillable attributes
+        $this->model_guard = false;
     }
 
 Skipping the first row of your CSV (Note: If the first row after the offset isn't the header row, a mapping must be defined):
@@ -245,22 +246,28 @@ Aliasing a CSV column:
     {
         $this->table = 'users';
         $this->filename = base_path('database/seeds/csvs/your_csv.csv');
-
-        // aliasing without a mapping - here, 'age' is a named column in your CSV
-        $this->aliases = [
-            'age' => 'date_of_birth',
-        ];
-
-        $this->mapping = [
-            0 => 'first_name',
-            1 => 'last_name',
-            5 => 'age',
-        ];
-        // aliasing with a mapping - here, 'age' is a column you mapped to index 5 of your CSV
         $this->aliases = [
             'age' => 'date_of_birth',
         ];
     }
+
+Aliasing a CSV column defined in `$mapping`:
+
+    public function __construct()
+    {
+        $this->table = 'users';
+        $this->filename = base_path('database/seeds/csvs/your_csv.csv');
+        $this->mapping = [
+            0 => 'first_name',
+            1 => 'last_name',
+            5 => 'birth_date', // in the CSV file, this column is named 'age'
+        ];
+        $this->aliases = [
+            'birth_date' => 'date_of_birth',
+        ];
+    }
+
+Check out the source of  `Crockett\CsvSeeder\CsvSeeder` for more complete information about the available methods.
 
 ## License
 
