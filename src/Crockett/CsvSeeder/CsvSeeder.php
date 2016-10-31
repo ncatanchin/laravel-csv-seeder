@@ -571,7 +571,7 @@ class CsvSeeder extends Seeder
     {
         if (is_array($this->aliases) && !empty( $this->aliases )) {
             foreach ($this->aliases as $csv_column => $alias_column) {
-                if ($columns->contains($csv_column)) {
+                if ($columns->has($csv_column)) {
                     $columns->put($alias_column, $columns->get($csv_column));
                     $columns->pull($csv_column);
                 }
