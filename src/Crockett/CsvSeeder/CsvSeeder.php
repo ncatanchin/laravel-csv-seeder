@@ -540,7 +540,8 @@ class CsvSeeder extends Seeder
     protected function cleanMapping(array $mapping)
     {
         $columns    = $mapping;
-        $columns[0] = $this->stripUtf8Bom($columns[0]);
+        if (isset($columns[0])) // only needed if we use first column of line
+            $columns[0] = $this->stripUtf8Bom($columns[0]);
 
         // Cull columns that don't exist in the database or were guarded by the model
         foreach ($columns as $index => $column) {
