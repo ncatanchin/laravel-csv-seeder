@@ -110,7 +110,7 @@ You could even go a step further and omit the table name, as the CSV filename is
 
 ### Mismatched columns
 
-Unless you have complete control over you CSVs, the headers won't always match up with your DB columns. For example:
+Unless you have complete control over your CSVs, the headers won't always match up with your DB columns. For example:
 
     // users.csv
     first_name, last_name, birth_date, password, favorite_color
@@ -220,7 +220,7 @@ Using a model instead of a table:
 
     public function __construct()
     {
-        $this->model = \App\User::model;
+        $this->model = \App\User::class;
         $this->filename = base_path('database/seeds/csvs/your_csv.csv');
         // optionally, disable the $model_guard to ignore your model's guarded/fillable attributes
         $this->model_guard = false;
