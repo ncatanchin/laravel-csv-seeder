@@ -517,7 +517,7 @@ class CsvSeeder extends Seeder
         $columns = new Collection();
         // apply mapping to a given row
         foreach ($mapping as $csv_index => $column_name) {
-            $column_value = ( array_key_exists($csv_index, $row) && !empty( $row[$csv_index] ) )
+            $column_value = ( array_key_exists($csv_index, $row) && isset( $row[$csv_index] ) && $row[$csv_index] !== '')
                 ? $row[$csv_index]
                 : null;
             $columns->put($column_name, $column_value);
