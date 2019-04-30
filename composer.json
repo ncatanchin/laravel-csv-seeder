@@ -1,5 +1,5 @@
 {
-    "name": "crockett/csv-seeder",
+    "name": "ncatanchin/laravel-csv-seeder",
     "description": "Database seeding using CSV files",
     "keywords": [
         "laravel",
@@ -12,8 +12,8 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Andy Crockett",
-            "email": "andyhcrockett@gmail.com"
+            "name": "Nicholas Catanchin",
+            "email": "nicholas@catanchin.id.au""
         }
     ],
     "require": {
@@ -22,7 +22,7 @@
     },
     "autoload": {
         "psr-0": {
-            "Crockett\\CsvSeeder\\": "src/"
+            "Ncatnow\\CsvSeeder\\": "src/"
         }
     },
     "minimum-stability": "dev"
