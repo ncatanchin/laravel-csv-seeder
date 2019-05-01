@@ -16,6 +16,12 @@
             "email": "nicholas@catanchin.id.au""
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/ncatanchin/laravel-csv-seeder"
+        }
+    ],
     "require": {
         "php": ">=5.4.0",
         "laravel/framework": ">=5.0.0"
