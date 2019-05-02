@@ -1,6 +1,6 @@
 <?php
 
-namespace Crockett\CsvSeeder;
+namespace Catanchin\LaravelCsvSeeder;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -21,7 +21,7 @@ class CsvSeederServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->package('crockett/csv-seeder');
+        $this->package('catanchin/laravel-csv-seeder');
     }
 
     /**
