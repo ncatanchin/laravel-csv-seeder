@@ -25,11 +25,7 @@ This package is intended to minimize the time and hassle spent importing CSV-bas
 
 ## Installation
 
-Require this package in your composer.json and run `composer update`
-
-    "crockett/csv-seeder": "1.1.*"
-
-Or just require it directly `composer require crockett/csv-seeder`
+`$ composer require ncatanchin/laravel-csv-seeder`
 
 ## Setup
 
