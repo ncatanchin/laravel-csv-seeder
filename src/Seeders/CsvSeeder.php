@@ -1,6 +1,6 @@
 <?php
 
-namespace Catanchin\LaravelCsvSeeder;
+namespace Catanchin\LaravelCsvSeeder\Seeders;
 
 use DB;
 use Illuminate\Database\Seeder;

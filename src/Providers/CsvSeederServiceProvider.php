@@ -1,6 +1,6 @@
 <?php
 
-namespace Catanchin\LaravelCsvSeeder;
+namespace Catanchin\LaravelCsvSeeder\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
