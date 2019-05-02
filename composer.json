@@ -35,5 +35,10 @@
             "Catanchin\\LaravelCsvSeeder\\": "src/"
         }
     },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.1"
+        }
+    },
     "minimum-stability": "dev"
 }
