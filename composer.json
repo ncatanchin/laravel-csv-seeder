@@ -29,7 +29,7 @@
     "require-dev": {
         "phpunit/phpunit": "^4.8.35 || ^5.7",
         "squizlabs/php_codesniffer": "^1.5"
-    },  
+    },
     "autoload": {
         "psr-4": {
             "Catanchin\\LaravelCsvSeeder\\": "src/"
@@ -40,7 +40,7 @@
             "dev-master": "2.0.2"
         },
         "laravel": {
-            providers": [
+            "providers": [
                 "Catanchin\Providers\CsvSeederServiceProvider"
             ]
         ]
