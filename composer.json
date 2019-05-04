@@ -37,8 +37,13 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0.1"
-        }
+            "dev-master": "2.0.2"
+        },
+        "laravel": {
+            providers": [
+                "Catanchin\Providers\CsvSeederServiceProvider"
+            ]
+        ]
     },
     "minimum-stability": "dev"
 }
