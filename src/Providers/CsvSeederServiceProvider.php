@@ -12,7 +12,7 @@ class CsvSeederServiceProvider extends ServiceProvider
      *
      * @var bool
      */
-    protected $defer = false;
+    protected $defer = true;
 
     /**
      * Bootstrap the application events.
@@ -21,7 +21,7 @@ class CsvSeederServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->package('catanchin/laravel-csv-seeder');
+        // $this->package('catanchin/laravel-csv-seeder');
     }
 
     /**
